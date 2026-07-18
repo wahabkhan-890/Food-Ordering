@@ -17,6 +17,15 @@ class AppStartupTest(unittest.TestCase):
         self.assertTrue(hasattr(app_module, "app"))
         self.assertIsNone(app_module.mongo.db)
 
+    def test_local_fallback_uri_is_used_when_uri_is_missing(self):
+        os.environ.pop("MONGO_URI", None)
+        os.environ["DATABASE_NAME"] = "food_ordering_db"
+        sys.modules.pop("app", None)
+
+        app_module = importlib.import_module("app")
+
+        self.assertEqual(app_module.build_mongo_uri(), "mongodb://localhost:27017/food_ordering_db")
+
 
 if __name__ == "__main__":
     unittest.main()

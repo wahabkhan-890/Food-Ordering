@@ -5,13 +5,11 @@ from services.auth_service import AuthService
 from utils.validators import validate_registration, validate_login
 from utils.response import success_response, error_response
 
-# Blueprint
-auth_bp = Blueprint('auth', __name__)
-
 
 def init_auth_routes(mongo):
     """Initialize auth routes with database"""
 
+    auth_bp = Blueprint('auth', __name__)
     user_model = UserModel(mongo.db) if getattr(mongo, "db", None) is not None else None
     auth_service = AuthService(user_model) if user_model is not None else None
 
