@@ -72,6 +72,9 @@ from routes.auth_routes import init_auth_routes
 
 auth_bp = init_auth_routes(mongo)
 app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
+from routes.menu_routes import init_menu_routes
+menu_bp = init_menu_routes(mongo)
+app.register_blueprint(menu_bp, url_prefix='/api/v1/menu')
 
 
 @app.route('/')
