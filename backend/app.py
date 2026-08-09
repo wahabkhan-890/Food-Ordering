@@ -9,13 +9,11 @@ import os
 
 load_dotenv()
 
-
 def is_placeholder_value(value):
     if not value:
         return True
     value = value.strip()
     return value.startswith("<") or value.endswith(">") or value.lower() in {"changeme", "your_uri_here"}
-
 
 def build_mongo_uri():
     configured_uri = os.getenv("MONGO_URI", "").strip()
@@ -23,7 +21,6 @@ def build_mongo_uri():
         return configured_uri
     database_name = os.getenv("DATABASE_NAME", "food_ordering_db").strip() or "food_ordering_db"
     return f"mongodb://localhost:27017/{database_name}"
-
 
 app = Flask(__name__)
 CORS(app)
@@ -34,13 +31,10 @@ app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET", "super-secret-key")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 
-
 class MongoWrapper:
     def __init__(self, db):
         self.db = db
 
-
-# ✅ FIXED: Sirf EK definition, with retries!
 def create_mongo_connection(retries=3):
     mongo_uri = os.getenv("MONGO_URI")
     if not mongo_uri:
@@ -62,21 +56,28 @@ def create_mongo_connection(retries=3):
     print("❌ All connection attempts failed. Server will run without database.")
     return None
 
-
 mongo_db = create_mongo_connection()
 mongo = MongoWrapper(mongo_db)
 jwt = JWTManager(app)
 
-# Register blueprints
-from routes.auth_routes import init_auth_routes
+# Register blueprints — ONLY if database is connected
+if mongo_db is not None:
+    from routes.auth_routes import init_auth_routes
+    from routes.menu_routes import init_menu_routes
+    from routes.order_routes import init_order_routes
 
-auth_bp = init_auth_routes(mongo)
-app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
-from routes.menu_routes import init_menu_routes
-menu_bp = init_menu_routes(mongo)
-app.register_blueprint(menu_bp, url_prefix='/api/v1/menu')
+    auth_bp = init_auth_routes(mongo)
+    app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
 
+    menu_bp = init_menu_routes(mongo)
+    app.register_blueprint(menu_bp, url_prefix='/api/v1/menu')
 
+    order_bp = init_order_routes(mongo)
+    app.register_blueprint(order_bp, url_prefix='/api/v1/orders')
+    
+    print("✅ All API routes registered!")
+else:
+    print("⚠️  Database not connected. API routes NOT registered.")
 @app.route('/')
 def home():
     db_status = "Connected" if mongo_db is not None else "Not Connected"
@@ -85,7 +86,6 @@ def home():
         "version": "v1",
         "database": db_status
     }
-
 
 @app.route('/api/health')
 def health_check():
@@ -97,7 +97,6 @@ def health_check():
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
         return {"status": "healthy", "database": f"error - {str(e)}"}
-
 
 if __name__ == '__main__':
     print("🚀 Starting server...")

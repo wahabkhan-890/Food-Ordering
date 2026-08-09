@@ -3,6 +3,21 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import AdminMenu from './components/admin/AdminMenu';
 import MenuList from './components/menu/MenuList';
+import CartPage from './pages/CartPage';
+import OrdersPage from './pages/OrderPage';
+import AdminOrdersPage from './pages/AdmainOrdersPage';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// React Query setup
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000, // 30 seconds — itna time data fresh rahega
+      retry: 2,         // Fail hone pe 2 baar retry
+      refetchOnWindowFocus: true, // Window focus pe refresh
+    },
+  },
+});
 
 
 function App() {
