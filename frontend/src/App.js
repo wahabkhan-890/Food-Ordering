@@ -7,6 +7,7 @@ import CartPage from './pages/CartPage';
 import OrdersPage from './pages/OrderPage';
 import AdminOrdersPage from './pages/AdmainOrdersPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import AdminDashboard from './pages/AdminDashboard';
 
 // React Query setup
 const queryClient = new QueryClient({
@@ -27,6 +28,7 @@ function App() {
         <nav className="bg-gray-800 p-4 flex gap-4 justify-center">
           <Link to="/login" className="text-white hover:text-blue-300">Login</Link>
           <Link to="/register" className="text-white hover:text-blue-300">Register</Link>
+          <Link to="/admin/dashboard" className="text-white hover:text-blue-300">Dashboard</Link>
         </nav>
 
         <Routes>
@@ -35,6 +37,7 @@ function App() {
           <Route path="/" element={<h1 className="text-center mt-10 text-3xl">Welcome to Food Ordering App! 🍔</h1>} />
           <Route path="/admin/menu" element={<AdminMenu/>}/>
           <Route path="/menu" element={<MenuList/>}/>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Routes>
       </div>
     </Router>
