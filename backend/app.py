@@ -74,8 +74,10 @@ if mongo_db is not None:
 
     order_bp = init_order_routes(mongo)
     app.register_blueprint(order_bp, url_prefix='/api/v1/orders')
+    analytics_bp = init_analytics_routes(mongo)
+    app.register_blueprint(analytics_bp, url_prefix='/api/v1/analytics')
     
-    print("✅ All API routes registered!")
+    print(" All API routes registered!")
 else:
     print("⚠️  Database not connected. API routes NOT registered.")
 @app.route('/')
