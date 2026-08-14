@@ -7,8 +7,9 @@ import DailyOrdersChart from '../components/dashboard/DailyOrdersChart';
 import TopItemsChart from '../components/dashboard/TopItemsChart';
 import PeakHoursChart from '../components/dashboard/PeakHoursChart';
 import CategoriesChart from '../components/dashboard/CategoriesChart';
+import PredictionChart from '../components/dashboard/PredictionChart';
 
-// Fetch functions
+// Fetch functions — ye component ke bahar OK hain (ye hooks nahi hain)
 const fetchDailyOrders = async () => {
   const res = await API.get('/analytics/daily-orders?days=7');
   return res.data.daily_orders.map(item => ({
@@ -42,21 +43,30 @@ const fetchCategories = async () => {
   }));
 };
 
+const fetchPredictions = async () => {
+  const res = await API.get('/predictions/next-7-days');
+  return res.data;
+};
+
 const AdminDashboard = () => {
+  // ✅ Saare useQuery hooks component ke ANDAR hain
   const dailyOrdersQuery = useQuery({ queryKey: ['dailyOrders'], queryFn: fetchDailyOrders });
   const topItemsQuery = useQuery({ queryKey: ['topItems'], queryFn: fetchTopItems });
   const peakHoursQuery = useQuery({ queryKey: ['peakHours'], queryFn: fetchPeakHours });
   const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: fetchCategories });
+  const predictionQuery = useQuery({ queryKey: ['predictions'], queryFn: fetchPredictions });
 
-  // Loading state — using reusable component
+  // Loading state
   if (dailyOrdersQuery.isLoading || topItemsQuery.isLoading || 
-      peakHoursQuery.isLoading || categoriesQuery.isLoading) {
+      peakHoursQuery.isLoading || categoriesQuery.isLoading || 
+      predictionQuery.isLoading) {
     return <LoadingSpinner message="Loading Dashboard..." />;
   }
 
-  // Error state — using reusable component
+  // Error state
   if (dailyOrdersQuery.isError || topItemsQuery.isError || 
-      peakHoursQuery.isError || categoriesQuery.isError) {
+      peakHoursQuery.isError || categoriesQuery.isError || 
+      predictionQuery.isError) {
     return <ErrorMessage message="Failed to load dashboard. Please login as admin." />;
   }
 
@@ -64,6 +74,7 @@ const AdminDashboard = () => {
   const topItems = topItemsQuery.data || [];
   const peakHours = peakHoursQuery.data || [];
   const categories = categoriesQuery.data || [];
+  const predictionData = predictionQuery.data || null;
 
   return (
     <div style={{ padding: 30, background: '#f5f5f5', minHeight: '100vh' }}>
@@ -105,6 +116,21 @@ const AdminDashboard = () => {
         <TopItemsChart data={topItems} />
         <PeakHoursChart data={peakHours} />
         <CategoriesChart data={categories} />
+        
+        {/* Prediction Chart — only show if data available */}
+        {predictionData && predictionData.predictions ? (
+          <PredictionChart data={predictionData} />
+        ) : (
+          <div style={{ 
+            gridColumn: '1 / -1', 
+            textAlign: 'center', 
+            padding: 30, 
+            background: '#fff', 
+            borderRadius: 10 
+          }}>
+            <p>No prediction data available. Train the model first.</p>
+          </div>
+        )}
       </div>
     </div>
   );
