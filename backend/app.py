@@ -65,6 +65,10 @@ if mongo_db is not None:
     from routes.auth_routes import init_auth_routes
     from routes.menu_routes import init_menu_routes
     from routes.order_routes import init_order_routes
+    from routes.analytics_routes import init_analytics_routes
+    from routes.prediction_routes import init_prediction_routes
+    from routes.data_routes import init_data_routes
+    from routes.restaurant_routes import init_restaurant_routes
 
     auth_bp = init_auth_routes(mongo)
     app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
@@ -74,12 +78,23 @@ if mongo_db is not None:
 
     order_bp = init_order_routes(mongo)
     app.register_blueprint(order_bp, url_prefix='/api/v1/orders')
+
     analytics_bp = init_analytics_routes(mongo)
     app.register_blueprint(analytics_bp, url_prefix='/api/v1/analytics')
-    
-    print(" All API routes registered!")
+
+    prediction_bp = init_prediction_routes(mongo)
+    app.register_blueprint(prediction_bp, url_prefix='/api/v1/predictions')
+
+    data_bp = init_data_routes(mongo)
+    app.register_blueprint(data_bp, url_prefix='/api/v1/data')
+
+    restaurant_bp = init_restaurant_routes(mongo)
+    app.register_blueprint(restaurant_bp, url_prefix='/api/v1/restaurants')
+
+    print("✅ All API routes registered!")
 else:
     print("⚠️  Database not connected. API routes NOT registered.")
+
 @app.route('/')
 def home():
     db_status = "Connected" if mongo_db is not None else "Not Connected"
