@@ -21,7 +21,15 @@ def init_menu_routes(mongo):
     @menu_bp.route('', methods=['GET'])
     def get_menu():
         restaurant_id = request.args.get('restaurant_id')
-        result, status = menu_service.get_menu(restaurant_id)
+        search = request.args.get('search')
+        category = request.args.get('category')
+        result, status = menu_service.get_menu(restaurant_id, search, category)
+        return jsonify(result), status
+
+    @menu_bp.route('/categories', methods=['GET'])
+    def get_categories():
+        restaurant_id = request.args.get('restaurant_id')
+        result, status = menu_service.get_categories(restaurant_id)
         return jsonify(result), status
 
     @menu_bp.route('/<item_id>', methods=['PUT'])
