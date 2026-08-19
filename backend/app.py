@@ -25,7 +25,6 @@ def build_mongo_uri():
 app = Flask(__name__)
 CORS(app)
 
-# Configuration
 app.config["MONGO_URI"] = build_mongo_uri()
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET", "super-secret-key")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
@@ -69,6 +68,7 @@ if mongo_db is not None:
     from routes.prediction_routes import init_prediction_routes
     from routes.data_routes import init_data_routes
     from routes.restaurant_routes import init_restaurant_routes
+    from routes.favorite_routes import init_favorite_routes  # ← YAHAN IMPORT
 
     auth_bp = init_auth_routes(mongo)
     app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
@@ -90,6 +90,9 @@ if mongo_db is not None:
 
     restaurant_bp = init_restaurant_routes(mongo)
     app.register_blueprint(restaurant_bp, url_prefix='/api/v1/restaurants')
+
+    favorite_bp = init_favorite_routes(mongo)
+    app.register_blueprint(favorite_bp, url_prefix='/api/v1/favorites')
 
     print("✅ All API routes registered!")
 else:
