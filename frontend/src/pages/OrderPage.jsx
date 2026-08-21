@@ -50,6 +50,11 @@ const OrdersPage = () => {
               {order.status}
             </span>
           </div>
+          {order.status === 'Cancelled' && order.cancellation_reason && (
+  <p style={{ color: 'red', marginTop: 10 }}>
+    Cancellation Reason: {order.cancellation_reason}
+  </p>
+)}
           
           <div style={{ marginTop: 10 }}>
             {order.items.map((item, idx) => (

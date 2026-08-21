@@ -1,52 +1,40 @@
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt
-from models.analytics_model import AnalyticsModel
-from services.analytics_service import AnalyticsService
+from flask import abort
 
-analytics_bp = Blueprint('analytics', __name__)
+class AnalyticsService:
+    """Analytics Service — Business Logic"""
 
-def init_analytics_routes(mongo):
-    """Initialize analytics routes"""
-    
-    analytics_model = AnalyticsModel(mongo.db)
-    analytics_service = AnalyticsService(analytics_model)
+    def __init__(self, analytics_model):
+        self.analytics_model = analytics_model
 
-    @analytics_bp.route('/daily-orders', methods=['GET'])
-    @jwt_required()
-    def daily_orders():
-        """Get daily order counts (Admin)"""
-        claims = get_jwt()
-        role = claims.get("role", "customer")
-        days = request.args.get('days', 7, type=int)
-        result, status = analytics_service.get_daily_orders(days, role)
-        return jsonify(result), status
+    def get_daily_orders(self, days=7, user_role=None):
+        if user_role != "admin":
+            abort(403, "Admin access required")
+        data = self.analytics_model.get_daily_orders(days)
+        return {"daily_orders": data}, 200
 
-    @analytics_bp.route('/top-items', methods=['GET'])
-    @jwt_required()
-    def top_items():
-        """Get top selling items (Admin)"""
-        claims = get_jwt()
-        role = claims.get("role", "customer")
-        limit = request.args.get('limit', 5, type=int)
-        result, status = analytics_service.get_top_items(limit, role)
-        return jsonify(result), status
+    def get_top_items(self, limit=5, user_role=None):
+        if user_role != "admin":
+            abort(403, "Admin access required")
+        data = self.analytics_model.get_top_items(limit)
+        return {"top_items": data}, 200
 
-    @analytics_bp.route('/peak-hours', methods=['GET'])
-    @jwt_required()
-    def peak_hours():
-        """Get peak order hours (Admin)"""
-        claims = get_jwt()
-        role = claims.get("role", "customer")
-        result, status = analytics_service.get_peak_hours(role)
-        return jsonify(result), status
+    def get_peak_hours(self, user_role=None):
+        if user_role != "admin":
+            abort(403, "Admin access required")
+        data = self.analytics_model.get_peak_hours()
+        hour_map = {item["_id"]: item["count"] for item in data}
+        full_data = [{"hour": h, "count": hour_map.get(h, 0)} for h in range(24)]
+        return {"peak_hours": full_data}, 200
 
-    @analytics_bp.route('/categories', methods=['GET'])
-    @jwt_required()
-    def categories():
-        """Get category popularity (Admin)"""
-        claims = get_jwt()
-        role = claims.get("role", "customer")
-        result, status = analytics_service.get_category_stats(role)
-        return jsonify(result), status
+    def get_category_stats(self, user_role=None):
+        if user_role != "admin":
+            abort(403, "Admin access required")
+        data = self.analytics_model.get_category_stats()
+        return {"categories": data}, 200
 
-    return analytics_bp
+    def get_today_summary(self, user_role=None):
+        """Get today's summary (Admin only)."""
+        if user_role != "admin":
+            abort(403, "Admin access required")
+        summary = self.analytics_model.get_today_summary()
+        return {"summary": summary}, 200

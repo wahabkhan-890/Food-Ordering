@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import API from '../../services/api';
 import useCartStore from '../../store/cartStore';
@@ -12,9 +12,10 @@ const MenuList = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
+  const queryClient = useQueryClient();
   const addToCart = useCartStore(state => state.addToCart);
 
-  // Debounce search (300ms delay)
+  // Debounce search
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
     clearTimeout(window.searchTimeout);
@@ -41,6 +42,25 @@ const MenuList = () => {
     return res.data.categories;
   };
 
+  // Fetch favorites
+  const favoritesQuery = useQuery({
+    queryKey: ['myFavorites'],
+    queryFn: async () => {
+      const res = await API.get('/favorites');
+      return res.data.favorites.map(f => f._id);
+    },
+  });
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: ({ itemId, isFav }) => {
+      if (isFav) return API.delete(`/favorites/${itemId}`);
+      return API.post('/favorites', { item_id: itemId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myFavorites'] });
+    },
+  });
+
   const menuQuery = useQuery({
     queryKey: ['menu', restaurantId, debouncedSearch, selectedCategory],
     queryFn: fetchMenu,
@@ -53,6 +73,7 @@ const MenuList = () => {
 
   const items = menuQuery.data || [];
   const categories = categoriesQuery.data || [];
+  const favoriteIds = new Set(favoritesQuery.data || []);
 
   return (
     <div style={{ padding: 30 }}>
@@ -121,44 +142,63 @@ const MenuList = () => {
 
       {/* Menu Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 20 }}>
-        {items.map(item => (
-          <div key={item._id} style={{
-            background: 'white',
-            borderRadius: 12,
-            padding: 20,
-            boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}>
-            <img
-              src={item.image || 'https://via.placeholder.com/250'}
-              alt={item.name}
-              style={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 8, marginBottom: 10 }}
-            />
-            <h3 style={{ margin: '10px 0 5px 0' }}>{item.name}</h3>
-            <p style={{ color: '#888', fontSize: 14, flex: 1 }}>{item.description}</p>
-            <p style={{ fontSize: 12, color: '#999', margin: '5px 0' }}>
-              Category: {item.category}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-              <strong style={{ fontSize: 20, color: '#0088FE' }}>Rs. {item.price}</strong>
-              <button
-                onClick={() => addToCart(item)}
-                style={{
-                  padding: '8px 15px',
-                  background: '#00C49F',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                Add to Cart 🛒
-              </button>
+        {items.map(item => {
+          const isFav = favoriteIds.has(item._id);
+          return (
+            <div key={item._id} style={{
+              background: 'white',
+              borderRadius: 12,
+              padding: 20,
+              boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+            }}>
+              <img
+                src={item.image || 'https://via.placeholder.com/250'}
+                alt={item.name}
+                style={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 8, marginBottom: 10 }}
+              />
+              <h3 style={{ margin: '10px 0 5px 0' }}>{item.name}</h3>
+              <p style={{ color: '#888', fontSize: 14, flex: 1 }}>{item.description}</p>
+              <p style={{ fontSize: 12, color: '#999', margin: '5px 0' }}>
+                Category: {item.category}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+                <strong style={{ fontSize: 20, color: '#0088FE' }}>Rs. {item.price}</strong>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {/* Heart Button — INSIDE card */}
+                  <button
+                    onClick={() => toggleFavoriteMutation.mutate({ itemId: item._id, isFav })}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: 22,
+                      cursor: 'pointer',
+                      color: isFav ? '#ff4444' : '#ccc',
+                    }}
+                  >
+                    {isFav ? '❤️' : '🤍'}
+                  </button>
+                  {/* Add to Cart */}
+                  <button
+                    onClick={() => addToCart(item)}
+                    style={{
+                      padding: '8px 15px',
+                      background: '#00C49F',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    Add to Cart 🛒
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

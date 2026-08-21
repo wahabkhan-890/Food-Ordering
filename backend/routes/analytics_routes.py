@@ -40,3 +40,12 @@ class AnalyticsService:
         
         data = self.analytics_model.get_category_stats()
         return {"categories": data}, 200
+
+    @analytics_bp.route('/summary', methods=['GET'])
+    @jwt_required()
+     def today_summary():
+    """Get today's orders summary (Admin)."""
+    claims = get_jwt()
+    role = claims.get("role", "customer")
+    result, status = analytics_service.get_today_summary(role)
+    return jsonify(result), status    
