@@ -19,7 +19,6 @@ class OrderService:
     def get_my_orders(self, user_id):
         """Customer views their own orders"""
         orders = self.order_model.get_by_user(user_id)
-        # Convert ObjectId to string for JSON serialization
         for order in orders:
             order["_id"] = str(order["_id"])
         return {"orders": orders}, 200
@@ -33,18 +32,21 @@ class OrderService:
             order["_id"] = str(order["_id"])
         return {"orders": orders}, 200
 
-    def update_order_status(self, order_id, status, user_role):
-        """Admin updates order status"""
+    def update_order_status(self, order_id, status, user_role, cancellation_reason=None):
+        """Admin updates order status with optional cancellation reason"""
         if user_role != "admin":
             abort(403, "Admin access required")
-        
+
         valid_statuses = ["Pending", "Accepted", "Preparing", "Ready", "Delivered", "Cancelled"]
         if status not in valid_statuses:
             abort(400, f"Invalid status. Valid: {', '.join(valid_statuses)}")
+
+        if status == "Cancelled" and not cancellation_reason:
+            abort(400, "Cancellation reason is required")
 
         order = self.order_model.get_by_id(order_id)
         if not order:
             abort(404, "Order not found")
 
-        self.order_model.update_status(order_id, status)
+        self.order_model.update_status(order_id, status, cancellation_reason)
         return {"message": f"Order status updated to '{status}'"}, 200

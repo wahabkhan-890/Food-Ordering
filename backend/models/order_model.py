@@ -5,15 +5,15 @@ class OrderModel:
     """Order Model - MongoDB operations for orders"""
     
     def __init__(self, db):
-        self.collection = db.orders  # orders collection
+        self.collection = db.orders
 
     def create(self, user_id, items, total):
         """Create a new order"""
         order = {
-            "user_id": user_id,               # which user placed the order
-            "items": items,                   # [{name, price, quantity}]
-            "total": float(total),            # total bill amount
-            "status": "Pending",              # initial status
+            "user_id": user_id,
+            "items": items,
+            "total": float(total),
+            "status": "Pending",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -32,9 +32,15 @@ class OrderModel:
         """Get all orders (for admin)"""
         return list(self.collection.find().sort("created_at", -1))
 
-    def update_status(self, order_id, status):
-        """Update order status"""
+    def update_status(self, order_id, status, cancellation_reason=None):
+        """Update order status with optional cancellation reason"""
+        update_data = {
+            "status": status,
+            "updated_at": datetime.utcnow()
+        }
+        if status == "Cancelled" and cancellation_reason:
+            update_data["cancellation_reason"] = cancellation_reason
         self.collection.update_one(
             {"_id": ObjectId(order_id)},
-            {"$set": {"status": status, "updated_at": datetime.utcnow()}}
+            {"$set": update_data}
         )

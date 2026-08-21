@@ -8,6 +8,7 @@ import OrdersPage from './pages/OrderPage';
 import AdminOrdersPage from './pages/AdmainOrdersPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AdminDashboard from './pages/AdminDashboard';
+import FavoritesPage from './pages/FavoritesPage';
 
 // React Query setup
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ function App() {
           <Link to="/login" className="text-white hover:text-blue-300">Login</Link>
           <Link to="/register" className="text-white hover:text-blue-300">Register</Link>
           <Link to="/admin/dashboard" className="text-white hover:text-blue-300">Dashboard</Link>
+          <Link to="/favorites" className="text-white hover:text-blue-300">Favorites ❤️</Link>
         </nav>
 
         <Routes>
@@ -38,6 +40,7 @@ function App() {
           <Route path="/admin/menu" element={<AdminMenu/>}/>
           <Route path="/menu" element={<MenuList/>}/>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
         </Routes>
       </div>
     </Router>

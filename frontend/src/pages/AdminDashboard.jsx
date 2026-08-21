@@ -9,7 +9,7 @@ import PeakHoursChart from '../components/dashboard/PeakHoursChart';
 import CategoriesChart from '../components/dashboard/CategoriesChart';
 import PredictionChart from '../components/dashboard/PredictionChart';
 
-// Fetch functions — ye component ke bahar OK hain (ye hooks nahi hain)
+// Fetch functions
 const fetchDailyOrders = async () => {
   const res = await API.get('/analytics/daily-orders?days=7');
   return res.data.daily_orders.map(item => ({
@@ -48,25 +48,28 @@ const fetchPredictions = async () => {
   return res.data;
 };
 
+const fetchTodaySummary = async () => {
+  const res = await API.get('/analytics/summary');
+  return res.data.summary;
+};
+
 const AdminDashboard = () => {
-  // ✅ Saare useQuery hooks component ke ANDAR hain
   const dailyOrdersQuery = useQuery({ queryKey: ['dailyOrders'], queryFn: fetchDailyOrders });
   const topItemsQuery = useQuery({ queryKey: ['topItems'], queryFn: fetchTopItems });
   const peakHoursQuery = useQuery({ queryKey: ['peakHours'], queryFn: fetchPeakHours });
   const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: fetchCategories });
   const predictionQuery = useQuery({ queryKey: ['predictions'], queryFn: fetchPredictions });
+  const summaryQuery = useQuery({ queryKey: ['todaySummary'], queryFn: fetchTodaySummary });
 
-  // Loading state
   if (dailyOrdersQuery.isLoading || topItemsQuery.isLoading || 
       peakHoursQuery.isLoading || categoriesQuery.isLoading || 
-      predictionQuery.isLoading) {
+      predictionQuery.isLoading || summaryQuery.isLoading) {
     return <LoadingSpinner message="Loading Dashboard..." />;
   }
 
-  // Error state
   if (dailyOrdersQuery.isError || topItemsQuery.isError || 
       peakHoursQuery.isError || categoriesQuery.isError || 
-      predictionQuery.isError) {
+      predictionQuery.isError || summaryQuery.isError) {
     return <ErrorMessage message="Failed to load dashboard. Please login as admin." />;
   }
 
@@ -75,6 +78,7 @@ const AdminDashboard = () => {
   const peakHours = peakHoursQuery.data || [];
   const categories = categoriesQuery.data || [];
   const predictionData = predictionQuery.data || null;
+  const summary = summaryQuery.data || {};
 
   return (
     <div style={{ padding: 30, background: '#f5f5f5', minHeight: '100vh' }}>
@@ -82,32 +86,12 @@ const AdminDashboard = () => {
         Admin Dashboard 📊
       </h1>
 
-      {/* Summary Cards */}
+      {/* Today's Summary Cards */}
       <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginBottom: 30, flexWrap: 'wrap' }}>
-        <SummaryCard 
-          title="Total Orders" 
-          value={dailyOrders.reduce((sum, d) => sum + d.orders, 0)} 
-          color="#0088FE" 
-          icon="📦"
-        />
-        <SummaryCard 
-          title="Top Item" 
-          value={topItems[0]?.name || 'N/A'} 
-          color="#00C49F" 
-          icon="⭐"
-        />
-        <SummaryCard 
-          title="Peak Hour" 
-          value={peakHours.reduce((max, h) => h.orders > max.orders ? h : max, { orders: 0 }).hour || 'N/A'} 
-          color="#FFBB28" 
-          icon="🕐"
-        />
-        <SummaryCard 
-          title="Categories" 
-          value={categories.length} 
-          color="#FF8042" 
-          icon="🏷️"
-        />
+        <SummaryCard title="Today's Orders" value={summary.today_orders || 0} color="#0088FE" icon="📦" />
+        <SummaryCard title="Today's Revenue" value={`Rs. ${summary.today_revenue || 0}`} color="#00C49F" icon="💰" />
+        <SummaryCard title="Pending Orders" value={summary.pending_orders || 0} color="#FFBB28" icon="⏳" />
+        <SummaryCard title="Total Customers" value={summary.total_customers || 0} color="#FF8042" icon="👥" />
       </div>
 
       {/* Charts Grid */}
@@ -117,17 +101,10 @@ const AdminDashboard = () => {
         <PeakHoursChart data={peakHours} />
         <CategoriesChart data={categories} />
         
-        {/* Prediction Chart — only show if data available */}
         {predictionData && predictionData.predictions ? (
           <PredictionChart data={predictionData} />
         ) : (
-          <div style={{ 
-            gridColumn: '1 / -1', 
-            textAlign: 'center', 
-            padding: 30, 
-            background: '#fff', 
-            borderRadius: 10 
-          }}>
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 30, background: '#fff', borderRadius: 10 }}>
             <p>No prediction data available. Train the model first.</p>
           </div>
         )}
